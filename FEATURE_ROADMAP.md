@@ -5,4 +5,4 @@
 - **Advanced — planned:** source adapters with enforceable rights, authorized discovery, opt-in local recommendations, lyrics under licence or user-provided, smart playlists, permitted downloads and audio processing.
 - **Production — planned:** thorough security and privacy review, migration and backup strategy, CI, performance profiling, device matrix, legal agreements, release preparation. No production-readiness claim is made.
 
-MVP exit requires actual playback of user-owned audio with background/notification/lock-screen controls, search, persistent favourites/playlists and queue manipulation on supported devices. Unsupported features must not be represented as working.
+MVP exit requires actual playback of user-owned audio with background/notification/lock-screen controls, search, persistent favourites/playlists and queue manipulation on supported devices. The build and physical-device checks remain unexecuted. Unsupported features must not be represented as working.

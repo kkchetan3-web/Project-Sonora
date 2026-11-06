@@ -5,9 +5,9 @@ Status definitions: **Not started** = no implementation; **In development** = pa
 | Module | Feature | Status | Dependency / gap |
 |---|---|---|---|
 | A | Play/pause, previous/next, local queue playback | In development | Media3 service and controls exist; build/device validation pending |
-| A | Shuffle, repeat, seek, queue editing, add to queue | In development | Media3 controller UI; validation pending |
+| A | Shuffle, repeat, seek, queue editing, play next, add to queue | In development | Media3 controller UI; validation pending |
 | A | Queue/position restoration | In development | Local snapshots; process death/device tests pending |
-| A | Play next, smart shuffle, autoplay, crossfade, transitions, normalization, hide/explicit, video switching | Not started | Recommendations, DSP, metadata or video and rights |
+| A | Smart shuffle, autoplay, crossfade, transitions, normalization, hide/explicit, video switching | Not started | Recommendations, DSP, metadata or video and rights |
 | B | MP3, FLAC, WAV, AAC, M4A, OGG, Opus, ALAC playback | In development | Media3/device decoder compatibility untested; no format guarantee |
 | B | Quality profiles, adaptive streaming, bitrate/format display, lossless | Not started | Source-provided variants, actual pipeline measurement |
 | B | EQ, presets, bass/treble, normalization, DAC | Not started | Device effects or tested DSP |

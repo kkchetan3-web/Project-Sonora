@@ -15,6 +15,17 @@ class PlaybackSnapshotTest {
         assertNull(PlaybackSnapshot.decode("""{"items":[{"uri":"content://one"}],"index":1}"""))
     }
 
+    @Test fun revokedGrantsAreRemovedWithoutChangingSurvivorOrder() {
+        val items = listOf(SnapshotItem("a", "A", ""), SnapshotItem("b", "B", ""), SnapshotItem("c", "C", ""))
+        val original = PlaybackSnapshot(items, 1, 456, 1, true)
+        val result = original.withAvailableUris(setOf("a", "c"))!!
+        assertEquals(listOf("a", "c"), result.items.map { it.uri })
+        assertEquals(1, result.index)
+        assertEquals(0L, result.positionMs)
+        assertEquals(456L, original.withAvailableUris(setOf("b"))!!.positionMs)
+        assertNull(original.withAvailableUris(emptySet()))
+    }
+
     @Test fun clampsCorruptPositionAndRepeatMode() {
         val snapshot = PlaybackSnapshot.decode("""{"items":[{"uri":"content://one"}],"index":0,"position":-5,"repeat":99}""")!!
         assertEquals(0L, snapshot.positionMs)

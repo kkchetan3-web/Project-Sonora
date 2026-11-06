@@ -6,6 +6,15 @@ import org.json.JSONObject
 /** A local snapshot only: restoring must never resume playback without user action. */
 internal data class SnapshotItem(val uri: String, val title: String, val artist: String)
 internal data class PlaybackSnapshot(val items: List<SnapshotItem>, val index: Int, val positionMs: Long, val repeatMode: Int, val shuffle: Boolean) {
+    /** Drop revoked grants without changing the relative order of surviving queue entries. */
+    fun withAvailableUris(available: Set<String>): PlaybackSnapshot? {
+        val kept = items.withIndex().filter { it.value.uri in available }
+        if (kept.isEmpty()) return null
+        val selected = kept.indexOfFirst { it.index == index }
+        val next = if (selected >= 0) selected else kept.indexOfFirst { it.index > index }.let { if (it >= 0) it else kept.lastIndex }
+        return copy(items = kept.map { it.value }, index = next, positionMs = if (selected >= 0) positionMs else 0)
+    }
+
     fun encode(): String = JSONObject().apply {
         put("items", JSONArray().apply { items.forEach { put(JSONObject().put("uri", it.uri).put("title", it.title).put("artist", it.artist)) } })
         put("index", index); put("position", positionMs); put("repeat", repeatMode); put("shuffle", shuffle)

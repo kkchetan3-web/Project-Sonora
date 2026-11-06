@@ -134,6 +134,12 @@ class MainActivity : ComponentActivity() {
                             }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFF344635), modifier = Modifier.size(48.dp)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.MusicNote, contentDescription = null, tint = colors.primary) } }
                                 Column(Modifier.weight(1f).padding(start = 12.dp)) { Text(track.title, maxLines = 1); Text(track.artist, color = Color(0xFFAFB9AC), style = MaterialTheme.typography.bodySmall, maxLines = 1) }
+                                IconButton(enabled = p != null, onClick = {
+                                    if (p != null) {
+                                        if (p.mediaItemCount == 0) { p.addMediaItem(track.mediaItem()); p.prepare() }
+                                        else p.addMediaItem(p.currentMediaItemIndex + 1, track.mediaItem())
+                                    }
+                                }) { Icon(Icons.Default.QueuePlayNext, "Play ${track.title} next") }
                                 IconButton(enabled = p != null, onClick = { if (p != null) { val wasEmpty = p.mediaItemCount == 0; p.addMediaItem(track.mediaItem()); if (wasEmpty) p.prepare() } }) { Icon(Icons.Default.PlaylistAdd, "Add ${track.title} to queue") }
                                 IconButton(onClick = {
                                     favorites = if (track.uri in favorites) favorites - track.uri else favorites + track.uri
