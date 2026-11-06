@@ -27,6 +27,7 @@ class PlaybackInstrumentedTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private lateinit var controller: MediaController
     private lateinit var file: File
+    private lateinit var scenario: ActivityScenario<MainActivity>
 
     private fun main(action: () -> Unit) = instrumentation.runOnMainSync(action)
     private fun await(condition: () -> Boolean) {
@@ -37,10 +38,15 @@ class PlaybackInstrumentedTest {
             if (done) return
             Thread.sleep(100)
         }
-        fail("Timed out waiting for player state")
+        var detail = ""
+        if (::controller.isInitialized) main {
+            detail = "state=${controller.playbackState}, isPlaying=${controller.isPlaying}, playWhenReady=${controller.playWhenReady}, suppression=${controller.playbackSuppressionReason}, error=${controller.playerError?.stackTraceToString()}"
+        }
+        fail("Timed out waiting for player state: $detail")
     }
 
     @Before fun setup() {
+        scenario = ActivityScenario.launch(MainActivity::class.java)
         file = File(context.cacheDir, "test-tone.wav")
         val samples = 44100 * 5
         val b = ByteBuffer.allocate(44 + samples * 2).order(ByteOrder.LITTLE_ENDIAN)
@@ -55,6 +61,7 @@ class PlaybackInstrumentedTest {
 
     @After fun teardown() {
         if (::controller.isInitialized) main { controller.clearMediaItems(); controller.release() }
+        if (::scenario.isInitialized) scenario.close()
         if (::file.isInitialized) file.delete()
     }
 
@@ -101,9 +108,7 @@ class PlaybackInstrumentedTest {
     @Test fun activityRecreationKeepsServicePlayback() {
         main { controller.setMediaItem(item("recreate")); controller.prepare(); controller.play() }
         await { controller.isPlaying }
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            scenario.recreate()
-            await { controller.isPlaying && controller.currentMediaItem?.mediaId == "recreate" }
-        }
+        scenario.recreate()
+        await { controller.isPlaying && controller.currentMediaItem?.mediaId == "recreate" }
     }
 }
