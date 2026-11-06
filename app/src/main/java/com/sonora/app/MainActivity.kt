@@ -29,7 +29,7 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.google.common.util.concurrent.MoreExecutors
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -71,6 +71,9 @@ class MainActivity : ComponentActivity() {
         var controller by remember { mutableStateOf<MediaController?>(null) }
         var revision by remember { mutableIntStateOf(0) }
         var error by remember { mutableStateOf<String?>(null) }
+        var showQueue by remember { mutableStateOf(false) }
+        var showPlayer by remember { mutableStateOf(false) }
+        var position by remember { mutableLongStateOf(0L) }
         LaunchedEffect(uris) { tracks = withContext(Dispatchers.IO) { uris.map { readTrack(Uri.parse(it)) }.sortedBy { it.title.lowercase() } } }
         DisposableEffect(Unit) {
             val future = MediaController.Builder(this@MainActivity, SessionToken(this@MainActivity, ComponentName(this@MainActivity, PlaybackService::class.java))).buildAsync()
@@ -84,7 +87,7 @@ class MainActivity : ComponentActivity() {
                         })
                     }
                 } catch (e: Exception) { error = "Could not connect to playback service." }
-            }, MoreExecutors.directExecutor())
+            }, mainExecutor)
             onDispose { active = false; MediaController.releaseFuture(future); controller = null }
         }
         val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { selected ->
@@ -97,6 +100,9 @@ class MainActivity : ComponentActivity() {
         }
         val p = controller
         @Suppress("UNUSED_VARIABLE") val observedRevision = revision
+        LaunchedEffect(p) {
+            while (p != null) { position = p.currentPosition.coerceAtLeast(0); delay(500) }
+        }
         val current = p?.currentMediaItem
         val colors = darkColorScheme(primary = Color(0xFFC8F36B), background = Color(0xFF101411), surface = Color(0xFF1B221C), onSurface = Color(0xFFE8EDE4))
         MaterialTheme(colorScheme = colors) {
@@ -128,6 +134,7 @@ class MainActivity : ComponentActivity() {
                             }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFF344635), modifier = Modifier.size(48.dp)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.MusicNote, contentDescription = null, tint = colors.primary) } }
                                 Column(Modifier.weight(1f).padding(start = 12.dp)) { Text(track.title, maxLines = 1); Text(track.artist, color = Color(0xFFAFB9AC), style = MaterialTheme.typography.bodySmall, maxLines = 1) }
+                                IconButton(enabled = p != null, onClick = { if (p != null) { val wasEmpty = p.mediaItemCount == 0; p.addMediaItem(track.mediaItem()); if (wasEmpty) p.prepare() } }) { Icon(Icons.Default.PlaylistAdd, "Add ${track.title} to queue") }
                                 IconButton(onClick = {
                                     favorites = if (track.uri in favorites) favorites - track.uri else favorites + track.uri
                                     prefs.edit().putStringSet("favorites", favorites).apply()
@@ -138,7 +145,8 @@ class MainActivity : ComponentActivity() {
                     if (current != null && p != null) {
                         HorizontalDivider(color = Color(0xFF394239))
                         Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) { Text(current.mediaMetadata.title?.toString() ?: "Unknown track", maxLines = 1); Text(current.mediaMetadata.artist?.toString() ?: "Unknown artist", style = MaterialTheme.typography.bodySmall, color = Color(0xFFAFB9AC)) }
+                            Column(Modifier.weight(1f).clickable { showPlayer = true }) { Text(current.mediaMetadata.title?.toString() ?: "Unknown track", maxLines = 1); Text(current.mediaMetadata.artist?.toString() ?: "Unknown artist", style = MaterialTheme.typography.bodySmall, color = Color(0xFFAFB9AC)) }
+                            IconButton(onClick = { showQueue = true }) { Icon(Icons.Default.QueueMusic, "Open queue") }
                             IconButton(onClick = { p.seekToPreviousMediaItem() }) { Icon(Icons.Default.SkipPrevious, "Previous track") }
                             IconButton(onClick = { if (p.isPlaying) p.pause() else p.play() }) { Icon(if (p.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, if (p.isPlaying) "Pause" else "Play", tint = colors.primary) }
                             IconButton(onClick = { p.seekToNextMediaItem() }) { Icon(Icons.Default.SkipNext, "Next track") }
@@ -146,6 +154,48 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+            if (p != null && current != null && showPlayer) {
+                AlertDialog(onDismissRequest = { showPlayer = false }, title = { Text(current.mediaMetadata.title?.toString() ?: "Now playing") },
+                    text = {
+                        Column {
+                            Text(current.mediaMetadata.artist?.toString() ?: "Unknown artist")
+                            val duration = p.duration.takeIf { it > 0 && it != androidx.media3.common.C.TIME_UNSET } ?: 0L
+                            Slider(value = if (duration > 0) (position.toFloat() / duration).coerceIn(0f, 1f) else 0f,
+                                onValueChange = { if (duration > 0) { position = (it * duration).toLong(); p.seekTo(position) } }, enabled = duration > 0)
+                            Text("${formatTime(position)} / ${if (duration > 0) formatTime(duration) else "--:--"}")
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(onClick = { p.shuffleModeEnabled = !p.shuffleModeEnabled }) { Icon(Icons.Default.Shuffle, if (p.shuffleModeEnabled) "Shuffle on" else "Shuffle off", tint = if (p.shuffleModeEnabled) colors.primary else colors.onSurface) }
+                                IconButton(onClick = { p.seekToPreviousMediaItem() }) { Icon(Icons.Default.SkipPrevious, "Previous track") }
+                                IconButton(onClick = { if (p.isPlaying) p.pause() else p.play() }) { Icon(if (p.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, if (p.isPlaying) "Pause" else "Play") }
+                                IconButton(onClick = { p.seekToNextMediaItem() }) { Icon(Icons.Default.SkipNext, "Next track") }
+                                IconButton(onClick = { p.repeatMode = (p.repeatMode + 1) % 3 }) { Icon(if (p.repeatMode == Player.REPEAT_MODE_ONE) Icons.Default.RepeatOne else Icons.Default.Repeat, "Repeat: ${when (p.repeatMode) { Player.REPEAT_MODE_ONE -> "one"; Player.REPEAT_MODE_ALL -> "all"; else -> "off" }}", tint = if (p.repeatMode != Player.REPEAT_MODE_OFF) colors.primary else colors.onSurface) }
+                            }
+                        }
+                    }, confirmButton = { TextButton(onClick = { showPlayer = false; showQueue = true }) { Text("Queue") } }, dismissButton = { TextButton(onClick = { showPlayer = false }) { Text("Close") } })
+            }
+            if (p != null && showQueue) {
+                AlertDialog(onDismissRequest = { showQueue = false }, title = { Text("Playback queue") }, text = {
+                    Column {
+                        Text("Changes apply immediately.", style = MaterialTheme.typography.bodySmall)
+                        LazyColumn(Modifier.heightIn(max = 400.dp)) {
+                            items(p.mediaItemCount) { index ->
+                                val item = p.getMediaItemAt(index)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(item.mediaMetadata.title?.toString() ?: "Unknown track", modifier = Modifier.weight(1f), maxLines = 1, color = if (index == p.currentMediaItemIndex) colors.primary else colors.onSurface)
+                                    IconButton(enabled = index > 0, onClick = { p.moveMediaItem(index, index - 1) }) { Icon(Icons.Default.KeyboardArrowUp, "Move up") }
+                                    IconButton(enabled = index < p.mediaItemCount - 1, onClick = { p.moveMediaItem(index, index + 1) }) { Icon(Icons.Default.KeyboardArrowDown, "Move down") }
+                                    IconButton(onClick = { p.removeMediaItem(index) }) { Icon(Icons.Default.Close, "Remove from queue") }
+                                }
+                            }
+                        }
+                    }
+                }, confirmButton = { TextButton(onClick = { showQueue = false }) { Text("Done") } }, dismissButton = { TextButton(onClick = { p.clearMediaItems(); showQueue = false }) { Text("Clear queue") } })
+            }
         }
+    }
+
+    private fun formatTime(ms: Long): String {
+        val seconds = ms.coerceAtLeast(0) / 1000
+        return "%d:%02d".format(seconds / 60, seconds % 60)
     }
 }

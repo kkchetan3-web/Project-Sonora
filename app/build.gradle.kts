@@ -21,3 +21,8 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.5.1")
     implementation("androidx.media3:media3-session:1.5.1")
 }
+
+dependencies {
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
+}
