@@ -1,6 +1,6 @@
 # Testing
 
-No Android build, emulator test or real-device test has been run in this environment: Java, Gradle and Android SDK are unavailable. No results should be inferred from source inspection.
+Debug and release builds and unit tests passed in GitHub Actions; see TESTING_REPORT.md. No emulator test or real-device test has been run. Java, Gradle and Android SDK are unavailable in the sandbox. No runtime results should be inferred from source inspection.
 
 ## Required before MVP acceptance
 - Build using the pinned Gradle wrapper on JDK 17 / SDK 35 and verify CI execution.

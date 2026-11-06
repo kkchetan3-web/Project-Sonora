@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Ran debug and release builds and unit tests successfully in GitHub Actions; device validation remains outstanding.
 - Added Gradle 8.9 wrapper with checksum, Android CI workflow and reproducible setup instructions; build remains unverified.
 - Added play-next, missing-grant snapshot filtering and restricted external MediaSession commands; device validation remains outstanding.
 - Added unverified queue editing, seek, shuffle and repeat controls, plus paused best-effort playback snapshot restoration and snapshot unit tests.

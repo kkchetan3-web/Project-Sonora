@@ -4,7 +4,7 @@ An independent, local-first music player for Android. Sonora does not provide a 
 
 ## Current foundation (not a finished MVP)
 
-The initial Android source uses the system document picker to retain read access to selected audio files, reads basic title/artist metadata, searches a local library, saves favourites, and constructs a playback queue from the visible list. Source now includes player and queue dialogs (seek, shuffle, repeat, add, reorder, remove and clear), and best-effort queue/position snapshots that restore paused while dropping entries without persisted document grants. Media3 ExoPlayer and a MediaSessionService are wired for playback, audio focus, noisy-output handling and system media controls. These paths have **not yet been built or tested on an Android device**; see [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md).
+The initial Android source uses the system document picker to retain read access to selected audio files, reads basic title/artist metadata, searches a local library, saves favourites, and constructs a playback queue from the visible list. Source now includes player and queue dialogs (seek, shuffle, repeat, add, reorder, remove and clear), and best-effort queue/position snapshots that restore paused while dropping entries without persisted document grants. Media3 ExoPlayer and a MediaSessionService are wired for playback, audio focus, noisy-output handling and system media controls. The project has built and unit tests passed in GitHub Actions, but these paths have **not yet been tested on an Android device**; see [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md).
 
 ## Build and test
 
@@ -17,6 +17,6 @@ sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Alternatively set `sdk.dir` in an untracked `local.properties`. The checked-in wrapper pins Gradle 8.9 and verifies its distribution SHA-256. Android Gradle Plugin is 8.7.3, compile/target SDK 35, minimum SDK 26. Debug builds use the normal Android debug signing key. Release assembly is unsigned by default; production distribution requires a separately managed signing key and configuration. Never commit signing keys. CI uses the same build commands; a configured workflow is not evidence that it passed. See [TESTING_REPORT.md](TESTING_REPORT.md) for execution status and lifecycle/device test cases.
+Alternatively set `sdk.dir` in an untracked `local.properties`. The checked-in wrapper pins Gradle 8.9 and verifies its distribution SHA-256. Android Gradle Plugin is 8.7.3, compile/target SDK 35, minimum SDK 26. Debug builds use the normal Android debug signing key. Release assembly is unsigned by default; production distribution requires a separately managed signing key and configuration. Never commit signing keys. CI runs the build commands as separate steps; see the testing report for the actual run and its logs. See [TESTING_REPORT.md](TESTING_REPORT.md) for execution status and lifecycle/device test cases.
 
 See [research](SPOTIFY_FEATURE_RESEARCH.md), [architecture](ARCHITECTURE.md), [roadmap](FEATURE_ROADMAP.md), [sources](AUDIO_SOURCES.md), [testing](TESTING.md), and [limitations](KNOWN_LIMITATIONS.md).
