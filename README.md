@@ -4,7 +4,7 @@ An independent, local-first music player for Android. Sonora does not provide a 
 
 ## Current foundation (not a finished MVP)
 
-The initial Android source uses the system document picker to retain read access to selected audio files, reads basic title/artist metadata, searches a local library, saves favourites, and constructs a playback queue from the visible list. Source now includes player and queue dialogs (seek, shuffle, repeat, add, reorder, remove and clear), and best-effort queue/position snapshots that restore paused while dropping entries without persisted document grants. Media3 ExoPlayer and a MediaSessionService are wired for playback, audio focus, noisy-output handling and system media controls. The project has built and unit tests passed in GitHub Actions, but these paths have **not yet been tested on an Android device**; see [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md).
+The initial Android source uses the system document picker to retain read access to selected audio files, reads basic title/artist metadata, searches a local library, saves favourites, and constructs a playback queue from the visible list. Source now includes player and queue dialogs (seek, shuffle, repeat, add, reorder, remove and clear), and best-effort queue/position snapshots that restore paused while dropping entries without persisted document grants. Media3 ExoPlayer and a MediaSessionService are wired for playback, audio focus, noisy-output handling and system media controls. The project has built and unit tests passed in GitHub Actions, and limited playback paths passed on an Android emulator; physical-device and SAF validation remain outstanding; see [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md).
 
 ## Build and test
 

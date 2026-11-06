@@ -1,6 +1,6 @@
 # Testing
 
-Debug and release builds and unit tests passed in GitHub Actions; see TESTING_REPORT.md. No emulator test or real-device test has been run. Java, Gradle and Android SDK are unavailable in the sandbox. No runtime results should be inferred from source inspection.
+Debug and release builds and unit tests passed in GitHub Actions; see TESTING_REPORT.md. Limited Media3 instrumentation passed on an emulator; no physical-device tests have been run. Java, Gradle and Android SDK are unavailable in the sandbox. No runtime results should be inferred from source inspection.
 
 ## Required before MVP acceptance
 - Build using the pinned Gradle wrapper on JDK 17 / SDK 35 and verify CI execution.

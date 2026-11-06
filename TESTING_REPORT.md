@@ -8,7 +8,7 @@ The run's `android-build-logs` artifact contains the captured full stdout/stderr
 
 ## Acceptance evidence
 
-Each not-run row has no supporting device output; it is **not a pass**. No physical device or emulator was available. Playback and security rows require the test setup detailed below, not just source inspection.
+The table below describes the earlier build-only run; see Runtime validation below for later emulator evidence. Each not-run row is not a pass. No physical device was available.
 
 | Criterion / test performed | Environment | Expected | Actual | Status / evidence |
 |---|---|---|---|---|
@@ -39,3 +39,34 @@ The launcher Activity is exported and has a MAIN/LAUNCHER filter. The exported `
 ## Required next tests
 
 Use a real device with several known-good user-owned local files and malformed/unsupported files; document model and OS. Test interruption by another focus owner separately from process death and device reboot. Force-stop is distinct from ordinary process death and can suppress system callbacks. Verify restored position within the five-second checkpoint interval, queue mutations and shuffle/repeat against the live player, SAF grant revocation and deletion separately, notification/lock-screen/headset/Bluetooth controls, and unauthorized external controller attempts. Test on emulator first where suitable, but record real-device results separately. Alpha cannot pass until all mandatory checks, persistent playlists and major failure handling are complete.
+
+# Runtime validation — 2026-11-06
+
+The first end-to-end emulator pass is [run 42206144571](https://github.com/kkchetan3-web/Project-Sonora/actions/runs/42206144571), commit `8989de6f1bf6c365f253ce1ebad5ed4cea20d104`: GitHub Actions `ubuntu-24.04`, hardware-accelerated Android API 35 Google APIs x86_64 emulator. Model and release properties, screenshot, logcat, instrumentation XML/HTML and full task output are in its `emulator-evidence-8989de6f1bf6c365f253ce1ebad5ed4cea20d104` artifact. The debug APK is in `sonora-debug-apk-8989de6f1bf6c365f253ce1ebad5ed4cea20d104` (debug signed, artifact expires under GitHub retention policy). The sandbox cannot download the artifacts from GitHub's storage host; they are available from the run page. Commands: `./gradlew :app:assembleDebug :app:assembleDebugAndroidTest`, then, after emulator boot, `./gradlew :app:connectedDebugAndroidTest`. The build job separately passed `:app:assembleDebug`, `:app:testDebugUnitTest` and `:app:assembleRelease`. Reports below refer to this precise run, not subsequent changes.
+
+| Test | Environment | Expected result | Actual result | Status |
+|---|---|---|---|---|
+| Generated five-second silent PCM WAV, start/pause, seek, next/previous, add/move/remove/clear, shuffle and repeat-all through MediaController | API 35 emulator, instrumentation | Media3 session reflects changes and plays | `playbackAndQueueControlsOperateOnRealMedia3Session` passed | PASS for tested controller operations only; no SAF/UI/audible-output proof |
+| Activity launch and recreation during playback | Same emulator | Session continues playback across recreation | `activityRecreationKeepsServicePlayback` passed | PASS for this recreation scenario only |
+| Corrupt WAV | Same emulator, private cache file | Player reports error, app survives | `corruptAudioReportsPlayerErrorInsteadOfCrashing` passed | PASS for one malformed fixture only |
+| Revoked-grant filtering, serialization, position and repeat/shuffle round-trip | JVM unit tests, CI | Snapshot model filters invalid grants and preserves state | Unit-test task passed | PARTIAL: simulated grants/model only, not OS lifecycle |
+| Import audio with SAF, grant persistence/revocation | None | Import and restart/revoke safely | Not run | BLOCKED — no SAF instrumentation harness or accessible device |
+| Missing/deleted/unavailable URI, unsupported format, invalid metadata | None | No crash, visible error, other items usable | Not run | BLOCKED — no device test and no provider harness; corrupt fixture above is narrower |
+| Queue and position restore, repeat/shuffle persistence after process termination and reboot | None | Restore current item and approximate position while paused | Not run | BLOCKED — no lifecycle instrumentation or physical device |
+| App background, interruption, audio focus | None | Background playback continues; focus behavior correct | Not run | BLOCKED — no interruption harness/device |
+| Notification and lock-screen controls, foreground-service lifetime | None | Controls operate and playback remains active | Not run | BLOCKED — no interaction test or physical device |
+| Bluetooth media and manufacturer-specific behavior | None | Hardware routing and controls work | Not run | BLOCKED — no physical Bluetooth device |
+| Untrusted/trusted external controller and exported service security | Static review only | Reject unauthorized connections and queue mutation | Source restricts controllers; no adversarial runtime verification | BLOCKED — no separate test app/device security tests |
+| Persistent Room playlists and full-screen player | None | Functionality present | Not implemented | BLOCKED — outstanding Alpha implementation |
+
+Earlier [run 42205286009](https://github.com/kkchetan3-web/Project-Sonora/actions/runs/42205286009) ran the emulator: corrupt-file test passed, but the two playback tests timed out before playback began. Those initial tests started playback without first bringing the activity to the foreground; Android 15 can reject audio focus in that state. The revised tests launch the activity first and passed. This is consistent with an audio-focus eligibility issue, but the earlier logs did not capture a decisive focus error, so the precise root cause is **not confirmed**, and this does not establish behavior for background starts.
+
+## Manual validation procedure for blocked cases
+
+1. From the CI run page download the `sonora-debug-apk-*` artifact, unzip and install with `adb install -r app-debug.apk`. Record device model, Android version, app revision, output and logs (`adb logcat -c` before each case, `adb logcat -d > case.log` afterwards). Use user-owned MP3/FLAC and other supported-format samples.
+2. In Sonora choose **Import audio**, pick multiple files, play one, force-stop with `adb shell am force-stop com.sonora.app`, relaunch and verify the files and read permissions still work. Revoke a selected document's grant using a test DocumentsProvider or system grant management, then relaunch and verify other items work. Separately delete a selected file while retaining the grant and test the library and queue; repeat with inaccessible/removable storage and malformed, corrupt and unsupported files. Capture failures and verify neither activity nor service crashes.
+3. Import several tracks. Add one as play-next, move/remove/clear entries, compare each operation with what actually plays, seek and toggle repeat-one/repeat-all/shuffle. At a known timestamp, allow at least one five-second checkpoint, kill the app process with `adb shell am kill com.sonora.app` when Android permits, relaunch and compare track, queue, position, shuffle and repeat. Test `force-stop` separately and then reboot separately; never assume these are equivalent. Note the actual loss window.
+4. Start playback in foreground, background the app, lock the screen, exercise notification and lock-screen pause/skip and start another audio app or call to test focus loss. Restore activity and inspect state. Repeat with a real Bluetooth headset and media keys; record manufacturer and Android version.
+5. From a separately installed untrusted test app, attempt MediaSession connection and commands, then test a user-approved notification listener and real system media controls. Verify the former cannot connect and the trusted external client cannot replace or mutate the queue, while normal controls function. Review API 26–27 identity edge cases. Do not infer security from the source review alone.
+
+Alpha remains incomplete: the above blocked cases, Room playlists, full-screen player and major-failure remediation need actual evidence. A successful emulator test is not physical-device verification.
