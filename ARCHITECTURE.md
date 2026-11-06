@@ -1,0 +1,9 @@
+# Architecture
+
+## Target
+Android Kotlin + Compose; UI observes a MediaController connected to a MediaSessionService owning a single ExoPlayer. Media3 manages the media session and notification, while the player requests audio focus and handles noisy output. Use a repository boundary between UI and sources, Room for library/queue/playlists, DataStore for settings, structured coroutines/Flow, and WorkManager only for eligible background sync. SAF grants provide scoped, user-selected file access. Handle revoked grants and removable storage as normal failures. Use audio effects only where supported and tied to the correct audio session.
+
+A future source interface should distinguish identity, metadata, playable URI, artwork, rights, region and offline permission; fail closed when rights are unknown. Do not equate metadata with stream entitlement. Optional backend components would include authenticated catalogue ingestion, rights and geographic policy, playback authorization, CDN, privacy controls, operational monitoring and deletion workflows. No backend is implemented or required for local files. Recommendations should be opt-in, local by default, explainable, and separate from the playback service.
+
+## Current implementation
+A single Activity owns Compose UI and preferences containing selected URI strings and favourites. Metadata is loaded off the main thread; a Media3 service owns playback. Selecting a track replaces the in-memory queue with the currently filtered list. This is intentionally a foundation, not the target repository/data architecture: queue and position are not persisted, and no source interface, backend, Room, DataStore, artwork cache or analytics exist yet. SAF providers can revoke grants; current error handling is basic. The exported session service exists for Android media clients; controller authorization and exposed commands require security review before release.

@@ -1,0 +1,3 @@
+# Security and privacy
+
+Report vulnerabilities privately to the repository owner; do not post secrets in public issues. Do not commit credentials. Current app stores URI references and favourites locally in private app preferences; it does not implement analytics, accounts or network access. It requests persisted read-only document grants. Grant revocation, malicious document providers, oversized or corrupt metadata, exposed MediaSession controller permissions, backups, dependency vulnerabilities, and service lifecycle require review and testing before release. Future providers must validate rights and URLs, use HTTPS, minimize credentials and never collect listening history without informed opt-in.
